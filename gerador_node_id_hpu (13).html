@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador Tabela OPC — SLB OneSubsea</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --navy:    #003087;
+  --navy2:   #00236b;
+  --navy3:   #e8edf7;
+  --orange:  #FF6B00;
+  --orange2: #e55f00;
+  --bg:      #EFF2F8;
+  --white:   #FFFFFF;
+  --border:  #CDD5E4;
+  --border2: #E2E8F4;
+  --text:    #12213A;
+  --text2:   #3D5068;
+  --text3:   #7A8EA8;
+  --green:   #0F6B3A;
+  --green-bg:#E3F5EC;
+  --amber:   #B45309;
+  --amber-bg:#FEF3C7;
+  --blue-bg: #EEF3FB;
+  --danger:  #B91C1C;
+  --danger-bg:#FEE2E2;
+  --shadow-sm: 0 1px 3px rgba(0,30,80,.08), 0 1px 2px rgba(0,30,80,.04);
+  --shadow:    0 4px 12px rgba(0,30,80,.10), 0 1px 3px rgba(0,30,80,.06);
+  --shadow-lg: 0 8px 24px rgba(0,30,80,.12), 0 2px 8px rgba(0,30,80,.06);
+  --radius: 10px;
+  --transition: all .18s cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* ======= HEADER ======= */
+.header {
+  background: linear-gradient(135deg, #001f6b 0%, #003087 60%, #004aad 100%);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,.25);
+}
+.header::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0;
+  height:3px;
+  background: linear-gradient(90deg, var(--orange) 0%, #ff9500 100%);
+}
+.header-left { display:flex; align-items:center; gap:20px; }
+.logo-wrap { display:flex; align-items:center; }
+.logo-wrap img { height:38px; filter:brightness(0) invert(1); transition:opacity .2s; }
+.logo-wrap img:hover { opacity:.85; }
+.header-divider {
+  width:1px; height:32px;
+  background:rgba(255,255,255,.2);
+  margin:0 4px;
+}
+.header-text { line-height:1.25; }
+.header-text h1 { font-size:14px; font-weight:600; color:#fff; letter-spacing:-.01em; }
+.header-text span { font-size:10px; color:rgba(255,255,255,.55); font-weight:400; letter-spacing:.04em; text-transform:uppercase; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.header-badge {
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;
+  padding:4px 10px;
+  font-size:10px;
+  color:rgba(255,255,255,.7);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.04em;
+}
+
+/* ======= LAYOUT ======= */
+.page { max-width:1600px; width:100%; margin:0 auto; padding:20px 24px 32px; }
+
+/* ======= PROGRESS BANNER ======= */
+.progress-banner {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:10px 20px;
+  margin-bottom:12px;
+  box-shadow:var(--shadow-sm);
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.progress-stats { display:flex; gap:20px; flex-shrink:0; }
+.stat { text-align:center; }
+.stat-num { font-size:22px; font-weight:700; color:var(--navy); line-height:1; }
+.stat-lbl { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+.stat.green .stat-num { color:var(--green); }
+.stat.amber .stat-num { color:var(--amber); }
+.progress-bar-wrap { flex:1; }
+.progress-bar-label { display:flex; justify-content:space-between; font-size:11px; color:var(--text3); margin-bottom:5px; }
+.progress-bar-track {
+  height:8px; background:var(--border2); border-radius:99px; overflow:hidden;
+}
+.progress-bar-fill {
+  height:100%;
+  background: linear-gradient(90deg, var(--green) 0%, #22c55e 100%);
+  border-radius:99px;
+  transition:width .4s ease;
+}
+
+/* ======= IDENTIFICATION CARD ======= */
+.id-card {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.id-card-header {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:13px 20px;
+  border-bottom:1px solid var(--border2);
+  background: linear-gradient(90deg, var(--navy3) 0%, var(--white) 100%);
+}
+.id-card-header svg { color:var(--navy); opacity:.7; flex-shrink:0; }
+.id-card-header h2 { font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; }
+.id-card-body { padding:18px 20px; }
+.id-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label {
+  font-size:11px; font-weight:600; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.06em;
+  display:flex; align-items:center; gap:5px;
+}
+.field label svg { color:var(--text3); }
+.field input {
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:9px 12px;
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  color:var(--text);
+  background:var(--white);
+  outline:none;
+  transition:var(--transition);
+  box-shadow:var(--shadow-sm);
+}
+.field input:focus {
+  border-color:var(--navy);
+  box-shadow:0 0 0 3px rgba(0,48,135,.10), var(--shadow-sm);
+}
+.field input::placeholder { color:var(--text3); font-weight:300; }
+.field select {
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:9px 12px;
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  color:var(--text);
+  background:var(--white);
+  outline:none;
+  cursor:pointer;
+  transition:var(--transition);
+  box-shadow:var(--shadow-sm);
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A8EA8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  padding-right:30px;
+}
+.field select:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,48,135,.10), var(--shadow-sm); }
+.field select.sel-ith  { border-color:#3b82f6; background-color:#eff6ff; color:#1d4ed8; }
+.field select.sel-lwo  { border-color:#8b5cf6; background-color:#f5f3ff; color:#6d28d9; }
+.field select.sel-osm  { border-color:#0891b2; background-color:#ecfeff; color:#0e7490; }
+.field select.sel-irm  { border-color:#d97706; background-color:#fffbeb; color:#b45309; }
+.op-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:5px; font-size:11px; font-weight:700;
+  letter-spacing:.04em;
+}
+.op-badge.ith { background:#dbeafe; color:#1d4ed8; }
+.op-badge.lwo { background:#ede9fe; color:#6d28d9; }
+.op-badge.osm { background:#cffafe; color:#0e7490; }
+.op-badge.irm { background:#fef3c7; color:#b45309; }
+/* ======= TABS ======= */
+.tabs-nav {
+  display:flex; align-items:flex-end; gap:4px; margin-bottom:10px;
+  border-bottom:2px solid var(--border);
+  padding-bottom:0;
+}
+.tab-btn {
+  display:flex; align-items:center; gap:7px;
+  padding:10px 20px;
+  border:none; background:none; cursor:pointer;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+  color:var(--text3); border-radius:8px 8px 0 0;
+  transition:var(--transition); position:relative; bottom:-2px;
+  border:1px solid transparent; border-bottom:none;
+}
+.tab-btn:hover { color:var(--navy); background:var(--navy3); }
+.tab-btn.active {
+  color:var(--navy); background:var(--white);
+  border-color:var(--border); border-bottom-color:var(--white);
+}
+.tab-btn .tab-badge {
+  font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px;
+  background:var(--blue-bg); color:var(--navy); border:1px solid var(--border2);
+}
+.tab-btn.active .tab-badge { background:var(--navy); color:#fff; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* Valve status table specific */
+.unit-press { font-size:10px; color:#92400e; line-height:1.35; }
+.unit-block  { font-size:10px; color:#0e7490; line-height:1.35; }
+.row-press td { background:#FFFBF0 !important; }
+.row-block  td { background:#F0FAFB !important; }
+.row-press:hover td { background:#FEF3C7 !important; }
+.row-block:hover td  { background:#CFFAFE !important; }
+
+
+/* ======= TOOLBAR ======= */
+.toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.toolbar-left { display:flex; align-items:center; gap:10px; }
+.toolbar-title { font-size:14px; font-weight:700; color:var(--text); letter-spacing:-.01em; }
+.toolbar-count {
+  font-size:11px; font-weight:600; color:var(--navy);
+  background:var(--blue-bg); border:1px solid var(--border2);
+  border-radius:20px; padding:2px 12px;
+}
+.toolbar-right { display:flex; gap:8px; }
+
+/* ======= BUTTONS ======= */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:8px; border:none;
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
+  cursor:pointer; transition:var(--transition); white-space:nowrap;
+  letter-spacing:.01em;
+}
+.btn svg { flex-shrink:0; }
+.btn-ghost {
+  background:var(--white); color:var(--text2);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+.btn-ghost:hover { border-color:var(--danger); color:var(--danger); background:#fff8f8; }
+.btn-add {
+  background:var(--white); color:var(--navy);
+  border:1.5px dashed var(--navy);
+  box-shadow:var(--shadow-sm);
+}
+.btn-add:hover { background:var(--navy3); }
+.btn-export {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  color:var(--white);
+  box-shadow:0 2px 8px rgba(0,48,135,.3), var(--shadow-sm);
+}
+.btn-export:hover {
+  background: linear-gradient(135deg, #002878 0%, #001950 100%);
+  box-shadow:0 4px 14px rgba(0,48,135,.4);
+  transform:translateY(-1px);
+}
+.btn-export:active { transform:translateY(0); }
+
+/* ======= SEARCH OVERLAY FOR DROPDOWN ======= */
+.desc-wrap { position:relative; }
+.desc-search {
+  width:100%; padding:6px 8px 6px 28px;
+  border:1px solid var(--border); border-radius:5px;
+  font-family:'Inter',sans-serif; font-size:11px;
+  color:var(--text); background:var(--white); outline:none;
+  transition:border-color .15s;
+  display:none;
+}
+.desc-search.visible { display:block; }
+.desc-search:focus { border-color:var(--navy); }
+.desc-search-icon {
+  position:absolute; left:8px; top:50%; transform:translateY(-50%);
+  color:var(--text3); pointer-events:none;
+}
+
+/* ======= TABLE ======= */
+.table-card {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.table-scroll { overflow-x:auto; }
+.table-scroll::-webkit-scrollbar { width:6px; height:6px; }
+.table-scroll::-webkit-scrollbar-track { background:transparent; }
+.table-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.table-scroll::-webkit-scrollbar-thumb:hover { background:var(--text3); }
+
+table { width:100%; border-collapse:collapse; font-size:12px; }
+
+thead { position:sticky; top:0; z-index:20; }
+thead th {
+  padding:11px 10px;
+  background: linear-gradient(180deg, #003a9e 0%, var(--navy) 100%);
+  color:rgba(255,255,255,.88);
+  font-size:10px; font-weight:600;
+  letter-spacing:.08em; text-transform:uppercase;
+  text-align:left; white-space:nowrap;
+  border-right:1px solid rgba(255,255,255,.08);
+  user-select:none;
+}
+thead th:first-child { border-radius:0; text-align:center; }
+thead th:last-child { border-right:none; }
+thead th.th-auto {
+  background: linear-gradient(180deg, #1a4aaa 0%, #1a40a0 100%);
+  color:rgba(255,255,255,.65);
+}
+
+tbody tr {
+  border-bottom:1px solid var(--border2);
+  transition:background .1s;
+}
+tbody tr:last-child { border-bottom:none; }
+tbody tr:nth-child(even) { background:#fafcff; }
+tbody tr:hover { background:var(--blue-bg); }
+tbody tr.row-filled { background:#f0faf5 !important; }
+tbody tr.row-filled:hover { background:#e3f5ec !important; }
+tbody tr.row-empty { background:#fffbf5 !important; }
+tbody tr.row-empty:hover { background:#fef3c7 !important; }
+tbody tr.row-new { animation:rowAppear .3s ease; }
+@keyframes rowAppear {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+tbody td { padding:6px 8px; vertical-align:middle; }
+
+/* Row number */
+.row-num {
+  font-size:10px; color:var(--text3); text-align:center;
+  display:block; font-family:'JetBrains Mono',monospace;
+  font-weight:500;
+}
+
+/* Status dot */
+.status-dot {
+  width:7px; height:7px; border-radius:50%;
+  display:inline-block; flex-shrink:0;
+}
+.status-dot.filled { background:var(--green); box-shadow:0 0 0 2px var(--green-bg); }
+.status-dot.empty  { background:#d1a32a; box-shadow:0 0 0 2px var(--amber-bg); }
+
+/* Tag Name */
+.tag-cell {
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:var(--navy); min-width:165px; max-width:200px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  display:block; font-weight:500;
+}
+.tag-cell.empty { color:var(--text3); font-style:italic; font-weight:400; }
+
+/* Type badge */
+.type-badge {
+  display:inline-flex; align-items:center;
+  padding:2px 7px; border-radius:5px;
+  font-size:10px; font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.02em;
+}
+.type-float { background:#EEF3FB; color:#1e40af; }
+.type-int   { background:#FEF3C7; color:#92400e; }
+.type-bool  { background:#F0FDF4; color:#166534; }
+
+/* Description select */
+select.desc-sel {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--navy);
+  font-family:'Inter',sans-serif;
+  font-size:11px;
+  font-weight:500;
+  padding:5px 7px;
+  outline:none;
+  cursor:pointer;
+  min-width:170px;
+  transition:var(--transition);
+  box-shadow:var(--shadow-sm);
+}
+select.desc-sel:hover { border-color:var(--navy); }
+select.desc-sel:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(0,48,135,.10); }
+select.desc-sel.filled { border-color:#86efac; background:#f0faf5; color:var(--green); }
+select.desc-sel.empty  { border-color:#fcd34d; background:#fffbf5; color:var(--amber); }
+
+/* Node ID */
+.node-cell {
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:var(--green); white-space:nowrap; display:block;
+  min-width:145px; font-weight:500;
+}
+.node-cell.empty { color:var(--text3); font-style:italic; font-weight:400; }
+
+/* Static cells */
+.cell-txt  { font-size:12px; color:var(--text2); }
+.cell-func { font-size:11px; color:var(--text); min-width:150px; line-height:1.45; }
+.cell-rto  { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); white-space:nowrap; }
+
+/* Delete button */
+.del-btn {
+  background:none; border:none; cursor:pointer;
+  color:var(--text3); padding:4px 6px; border-radius:5px;
+  transition:var(--transition); display:flex; align-items:center;
+}
+.del-btn:hover { color:var(--danger); background:var(--danger-bg); }
+
+/* ======= FOOTER STATUS BAR ======= */
+.status-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 16px;
+  border-top:1px solid var(--border2);
+  background:#fafcff;
+  font-size:10px; color:var(--text3);
+}
+.status-bar-right { display:flex; gap:16px; }
+.status-item { display:flex; align-items:center; gap:5px; }
+.status-item .status-dot { width:6px; height:6px; }
+
+/* ======= TOAST ======= */
+.toast {
+  position:fixed; bottom:24px; right:24px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  color:var(--white);
+  padding:11px 20px 11px 16px;
+  border-radius:10px;
+  font-size:12px; font-weight:600;
+  border-left:4px solid var(--orange);
+  opacity:0; transform:translateY(16px) scale(.97);
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  pointer-events:none; z-index:999;
+  box-shadow:var(--shadow-lg);
+  display:flex; align-items:center; gap:8px;
+}
+.toast.show { opacity:1; transform:translateY(0) scale(1); }
+.toast-icon { font-size:14px; }
+
+/* ======= SCROLLBAR ======= */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-wrap">
+      <img src="https://www.onesubsea.slb.com/-/media/onesubseajv/images/logos/jv_mainlogo.svg"
+           alt="SLB OneSubsea"
+           onerror="this.onerror=null;this.src='';this.parentNode.innerHTML='<span style=\'font-size:18px;font-weight:800;color:#fff;letter-spacing:-.02em;\'>SLB <span style=\'color:#FF6B00\'>OneSubsea</span></span>'"
+           style="height:38px;filter:brightness(0) invert(1);">
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-text">
+      <h1>Gerador Tabela OPC</h1>
+      <span>TAG NODE ID — HPU OSM · Rev.02</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-badge">HP7938-IDX-0001</span>
+  </div>
+</header>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- PROGRESS BANNER -->
+  <div class="progress-banner">
+    <div class="progress-stats">
+      <div class="stat">
+        <div class="stat-num" id="stat-total">32</div>
+        <div class="stat-lbl">Total</div>
+      </div>
+      <div class="stat green">
+        <div class="stat-num" id="stat-filled">0</div>
+        <div class="stat-lbl">Preenchidas</div>
+      </div>
+      <div class="stat amber">
+        <div class="stat-num" id="stat-pending">32</div>
+        <div class="stat-lbl">Pendentes</div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-label">
+        <span>Progresso de preenchimento</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDENTIFICATION CARD -->
+  <div class="id-card">
+    <div class="id-card-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <h2>Identificação da Unidade</h2>
+    </div>
+    <div class="id-card-body">
+      <div class="id-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="field">
+          <label>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            Nome da Sonda
+          </label>
+          <input id="inp_sonda" type="text" placeholder="Ex: NS-29">
+        </div>
+        <div class="field">
+          <label>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            Nome do Poço
+          </label>
+          <input id="inp_poco" type="text" placeholder="Ex: 9-BUZ-52-RJS">
+        </div>
+        <div class="field">
+          <label>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Tipo de Operação
+          </label>
+          <select id="inp_operacao" onchange="updateOpStyle(this,'op')">
+            <option value="ITH">ITH</option>
+            <option value="LWO">LWO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            IWOCS
+          </label>
+          <select id="inp_iwocs" onchange="updateOpStyle(this,'iwocs')">
+            <option value="OSM">OSM</option>
+            <option value="IRM">IRM</option>
+          </select>
+        </div>
+      </div><!-- /id-grid -->
+    </div><!-- /id-card-body -->
+  </div><!-- /id-card -->
+
+  <!-- TABS NAV -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" id="tab-btn-tags" onclick="switchTab('tags')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Relação Tags HPU OSS
+      <span class="tab-badge" id="tab-badge-tags">32</span>
+    </button>
+    <button class="tab-btn" id="tab-btn-valves" onclick="switchTab('valves')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      Status de Válvulas
+      <span class="tab-badge" id="tab-badge-valves">24</span>
+    </button>
+    <div style="flex:1;"></div>
+    <button class="btn btn-export" onclick="exportExcel()" style="margin-bottom:2px;align-self:center;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar Excel
+    </button>
+  </div>
+
+  <!-- ===== TAB: RELAÇÃO TAGS ===== -->
+  <div class="tab-panel active" id="panel-tags">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="toolbar-title">Relação Tags HPU OSS</span>
+        <span class="toolbar-count" id="rowCount">32 linhas</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-ghost" onclick="resetAll()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          Limpar seleções
+        </button>
+        <button class="btn btn-add" onclick="addRow()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar linha
+        </button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;text-align:center;">№</th>
+              <th style="width:28px;text-align:center;" title="Status"></th>
+              <th class="th-auto">Tag Name <small style="opacity:.55;font-size:9px;">(auto)</small></th>
+              <th style="width:72px;">Data Type</th>
+              <th style="width:80px;">Client Access</th>
+              <th>Description ▾</th>
+              <th style="width:60px;">Unit</th>
+              <th style="width:115px;">Range</th>
+              <th style="min-width:160px;">Função</th>
+              <th style="min-width:130px;">RTO Tag</th>
+              <th class="th-auto">OPC Tag <small style="opacity:.55;font-size:9px;">(auto)</small></th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="status-bar">
+        <span id="status-msg">Selecione a Description em cada linha — Tag Name e OPC Tag são preenchidos automaticamente.</span>
+        <div class="status-bar-right">
+          <span class="status-item"><span class="status-dot filled"></span> Preenchida</span>
+          <span class="status-item"><span class="status-dot empty"></span> Pendente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: STATUS DE VÁLVULAS ===== -->
+  <div class="tab-panel" id="panel-valves">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="toolbar-title">Status de Válvulas</span>
+        <span class="toolbar-count" id="valveRowCount">24 linhas</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-ghost" onclick="resetValves()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          Limpar seleções
+        </button>
+        <button class="btn btn-add" onclick="addValvePair()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar par
+        </button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;text-align:center;">№</th>
+              <th style="width:28px;text-align:center;"></th>
+              <th class="th-auto">Tag Name <small style="opacity:.55;font-size:9px;">(auto)</small></th>
+              <th style="width:72px;">Data Type</th>
+              <th style="width:80px;">Client Access</th>
+              <th>Description ▾</th>
+              <th style="min-width:280px;">Signal State / Unit</th>
+              <th style="min-width:140px;">Função</th>
+              <th style="min-width:160px;">RTO Tag</th>
+              <th class="th-auto">OPC Tag <small style="opacity:.55;font-size:9px;">(auto)</small></th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-valves"></tbody>
+        </table>
+      </div>
+      <div class="status-bar">
+        <span id="valve-status-msg">Selecione a Description — Tag Name e OPC Tag preenchem automaticamente.</span>
+        <div class="status-bar-right">
+          <span class="status-item" style="color:#92400e">■ Pressurize</span>
+          <span class="status-item" style="color:#0e7490">■ Block</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<div class="toast" id="toast">
+  <span class="toast-icon">✓</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+
+// ============================================================
+// VALVE STATUS DATA & ROWS
+// ============================================================
+const DATA_VALVE = {"HPU Output Line HP1 1 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_1.Pressurize_Status", "nodeId": "ns=1;s=2.3218.2.0.0.0"}, "HPU Output Line HP1 1 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_1.Block_Status", "nodeId": "ns=1;s=2.3218.3.0.0.0"}, "HPU Output Line HP1 1 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_2.Pressurize_Status", "nodeId": "ns=1;s=2.3220.2.0.0.0"}, "HPU Output Line HP1 1 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_2.Block_Status", "nodeId": "ns=1;s=2.3220.3.0.0.0"}, "HPU Output Line HP1 1 3 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_3.Pressurize_Status", "nodeId": "ns=1;s=2.3222.2.0.0.0"}, "HPU Output Line HP1 1 3 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_3.Block_Status", "nodeId": "ns=1;s=2.3222.3.0.0.0"}, "HPU Output Line HP1 1 4 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_4.Pressurize_Status", "nodeId": "ns=1;s=2.3223.2.0.0.0"}, "HPU Output Line HP1 1 4 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_4.Block_Status", "nodeId": "ns=1;s=2.3223.3.0.0.0"}, "HPU Output Line HP1 1 5 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_5.Pressurize_Status", "nodeId": "ns=1;s=2.3224.2.0.0.0"}, "HPU Output Line HP1 1 5 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_1_5.Block_Status", "nodeId": "ns=1;s=2.3224.3.0.0.0"}, "HPU Output Line HP1 2 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_1.Pressurize_Status", "nodeId": "ns=1;s=2.3173.2.0.0.0"}, "HPU Output Line HP1 2 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_1.Block_Status", "nodeId": "ns=1;s=2.3173.3.0.0.0"}, "HPU Output Line HP1 2 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_2.Pressurize_Status", "nodeId": "ns=1;s=2.3175.2.0.0.0"}, "HPU Output Line HP1 2 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_2.Block_Status", "nodeId": "ns=1;s=2.3175.3.0.0.0"}, "HPU Output Line HP1 2 3 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_3.Pressurize_Status", "nodeId": "ns=1;s=2.3177.2.0.0.0"}, "HPU Output Line HP1 2 3 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_3.Block_Status", "nodeId": "ns=1;s=2.3177.3.0.0.0"}, "HPU Output Line HP1 2 4 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_4.Pressurize_Status", "nodeId": "ns=1;s=2.3179.2.0.0.0"}, "HPU Output Line HP1 2 4 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_4.Block_Status", "nodeId": "ns=1;s=2.3179.3.0.0.0"}, "HPU Output Line HP1 2 5 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_5.Pressurize_Status", "nodeId": "ns=1;s=2.3181.2.0.0.0"}, "HPU Output Line HP1 2 5 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_5.Block_Status", "nodeId": "ns=1;s=2.3181.3.0.0.0"}, "HPU Output Line HP1 2 6 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_6.Pressurize_Status", "nodeId": "ns=1;s=2.3225.2.0.0.0"}, "HPU Output Line HP1 2 6 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_6.Block_Status", "nodeId": "ns=1;s=2.3225.3.0.0.0"}, "HPU Output Line HP1 2 7 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_7.Pressurize_Status", "nodeId": "ns=1;s=2.3227.2.0.0.0"}, "HPU Output Line HP1 2 7 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_7.Block_Status", "nodeId": "ns=1;s=2.3227.3.0.0.0"}, "HPU Output Line HP1 2 8 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_8.Pressurize_Status", "nodeId": "ns=1;s=2.3229.2.0.0.0"}, "HPU Output Line HP1 2 8 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_8.Block_Status", "nodeId": "ns=1;s=2.3229.3.0.0.0"}, "HPU Output Line HP1 2 9 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_9.Pressurize_Status", "nodeId": "ns=1;s=2.3231.2.0.0.0"}, "HPU Output Line HP1 2 9 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP1_2_9.Block_Status", "nodeId": "ns=1;s=2.3231.3.0.0.0"}, "HPU Output Line HP2 1 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_1_1.Pressurize_Status", "nodeId": "ns=1;s=2.3233.2.0.0.0"}, "HPU Output Line HP2 1 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_1_1.Block_Status", "nodeId": "ns=1;s=2.3233.3.0.0.0"}, "HPU Output Line HP2 1 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_1_2.Pressurize_Status", "nodeId": "ns=1;s=2.3235.2.0.0.0"}, "HPU Output Line HP2 1 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_1_2.Block_Status", "nodeId": "ns=1;s=2.3235.3.0.0.0"}, "HPU Output Line HP2 2 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_1.Pressurize_Status", "nodeId": "ns=1;s=2.3238.2.0.0.0"}, "HPU Output Line HP2 2 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_1.Block_Status", "nodeId": "ns=1;s=2.3238.3.0.0.0"}, "HPU Output Line HP2 2 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_2.Pressurize_Status", "nodeId": "ns=1;s=2.3240.2.0.0.0"}, "HPU Output Line HP2 2 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_2.Block_Status", "nodeId": "ns=1;s=2.3240.3.0.0.0"}, "HPU Output Line HP2 2 3 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_3.Pressurize_Status", "nodeId": "ns=1;s=2.3242.2.0.0.0"}, "HPU Output Line HP2 2 3 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_3.Block_Status", "nodeId": "ns=1;s=2.3242.3.0.0.0"}, "HPU Output Line HP2 2 4 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_4.Pressurize_Status", "nodeId": "ns=1;s=2.3244.2.0.0.0"}, "HPU Output Line HP2 2 4 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_4.Block_Status", "nodeId": "ns=1;s=2.3244.3.0.0.0"}, "HPU Output Line HP2 2 5 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_5.Pressurize_Status", "nodeId": "ns=1;s=2.3248.2.0.0.0"}, "HPU Output Line HP2 2 5 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_5.Block_Status", "nodeId": "ns=1;s=2.3248.3.0.0.0"}, "HPU Output Line HP2 2 6 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_6.Pressurize_Status", "nodeId": "ns=1;s=2.3246.2.0.0.0"}, "HPU Output Line HP2 2 6 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HP2_2_6.Block_Status", "nodeId": "ns=1;s=2.3246.3.0.0.0"}, "HPU Output Line MP1 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_1.Pressurize_Status", "nodeId": "ns=1;s=2.3160.2.0.0.0"}, "HPU Output Line MP1 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_1.Block_Status", "nodeId": "ns=1;s=2.3160.3.0.0.0"}, "HPU Output Line MP1 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_2.Pressurize_Status", "nodeId": "ns=1;s=2.3163.2.0.0.0"}, "HPU Output Line MP1 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_2.Block_Status", "nodeId": "ns=1;s=2.3163.3.0.0.0"}, "HPU Output Line MP1 3 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_3.Pressurize_Status", "nodeId": "ns=1;s=2.3164.2.0.0.0"}, "HPU Output Line MP1 3 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_3.Block_Status", "nodeId": "ns=1;s=2.3164.3.0.0.0"}, "HPU Output Line MP1 4 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_4.Pressurize_Status", "nodeId": "ns=1;s=2.3167.2.0.0.0"}, "HPU Output Line MP1 4 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_4.Block_Status", "nodeId": "ns=1;s=2.3167.3.0.0.0"}, "HPU Output Line MP1 5 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_5.Pressurize_Status", "nodeId": "ns=1;s=2.3169.2.0.0.0"}, "HPU Output Line MP1 5 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_5.Block_Status", "nodeId": "ns=1;s=2.3169.3.0.0.0"}, "HPU Output Line MP1 6 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_6.Pressurize_Status", "nodeId": "ns=1;s=2.3294.2.0.0.0"}, "HPU Output Line MP1 6 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_6.Block_Status", "nodeId": "ns=1;s=2.3294.3.0.0.0"}, "HPU Output Line MP1 7 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_7.Pressurize_Status", "nodeId": "ns=1;s=2.3296.2.0.0.0"}, "HPU Output Line MP1 7 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_7.Block_Status", "nodeId": "ns=1;s=2.3296.3.0.0.0"}, "HPU Output Line MP1 8 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_8.Pressurize_Status", "nodeId": "ns=1;s=2.3297.2.0.0.0"}, "HPU Output Line MP1 8 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_8.Block_Status", "nodeId": "ns=1;s=2.3297.3.0.0.0"}, "HPU Output Line MP1 9 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_9.Pressurize_Status", "nodeId": "ns=1;s=2.3300.2.0.0.0"}, "HPU Output Line MP1 9 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_9.Block_Status", "nodeId": "ns=1;s=2.3300.3.0.0.0"}, "HPU Output Line MP1 10 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_10.Pressurize_Status", "nodeId": "ns=1;s=2.3301.2.0.0.0"}, "HPU Output Line MP1 10 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP1_10.Block_Status", "nodeId": "ns=1;s=2.3301.3.0.0.0"}, "HPU Output Line MP2 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_1.Pressurize_Status", "nodeId": "ns=1;s=2.3264.2.0.0.0"}, "HPU Output Line MP2 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_1.Block_Status", "nodeId": "ns=1;s=2.3264.3.0.0.0"}, "HPU Output Line MP2 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_2.Pressurize_Status", "nodeId": "ns=1;s=2.3266.2.0.0.0"}, "HPU Output Line MP2 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_2.Block_Status", "nodeId": "ns=1;s=2.3266.3.0.0.0"}, "HPU Output Line MP2 3 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_3.Pressurize_Status", "nodeId": "ns=1;s=2.3268.2.0.0.0"}, "HPU Output Line MP2 3 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_3.Block_Status", "nodeId": "ns=1;s=2.3268.3.0.0.0"}, "HPU Output Line MP2 4 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_4.Pressurize_Status", "nodeId": "ns=1;s=2.3270.2.0.0.0"}, "HPU Output Line MP2 4 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_4.Block_Status", "nodeId": "ns=1;s=2.3270.3.0.0.0"}, "HPU Output Line MP2 5 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_5.Pressurize_Status", "nodeId": "ns=1;s=2.3271.2.0.0.0"}, "HPU Output Line MP2 5 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_5.Block_Status", "nodeId": "ns=1;s=2.3271.3.0.0.0"}, "HPU Output Line MP2 6 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_6.Pressurize_Status", "nodeId": "ns=1;s=2.3276.2.0.0.0"}, "HPU Output Line MP2 6 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_6.Block_Status", "nodeId": "ns=1;s=2.3276.3.0.0.0"}, "HPU Output Line MP2 7 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_7.Pressurize_Status", "nodeId": "ns=1;s=2.3278.2.0.0.0"}, "HPU Output Line MP2 7 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_7.Block_Status", "nodeId": "ns=1;s=2.3278.3.0.0.0"}, "HPU Output Line MP2 8 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_8.Pressurize_Status", "nodeId": "ns=1;s=2.3280.2.0.0.0"}, "HPU Output Line MP2 8 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_MP2_8.Block_Status", "nodeId": "ns=1;s=2.3280.3.0.0.0"}, "HPU Output Line SDR 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_SDR_1.Pressurize_Status", "nodeId": "ns=1;s=2.3324.2.0.0.0"}, "HPU Output Line SDR 1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_SDR_1.Block_Status", "nodeId": "ns=1;s=2.3324.3.0.0.0"}, "HPU Output Line SDR 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_SDR_2.Pressurize_Status", "nodeId": "ns=1;s=2.3323.2.0.0.0"}, "HPU Output Line SDR 2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_SDR_2.Block_Status", "nodeId": "ns=1;s=2.3323.3.0.0.0"}, "HPU Output Line HPU Test HP1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_HP1.Pressurize_Status", "nodeId": "ns=1;s=2.3326.2.0.0.0"}, "HPU Output Line HPU Test HP1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_HP1.Block_Status", "nodeId": "ns=1;s=2.3326.3.0.0.0"}, "HPU Output Line HPU Test HP2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_HP2.Pressurize_Status", "nodeId": "ns=1;s=2.3325.2.0.0.0"}, "HPU Output Line HPU Test HP2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_HP2.Block_Status", "nodeId": "ns=1;s=2.3325.3.0.0.0"}, "HPU Output Line HPU Test MP1 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_MP1.Pressurize_Status", "nodeId": "ns=1;s=2.3328.2.0.0.0"}, "HPU Output Line HPU Test MP1 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_MP1.Block_Status", "nodeId": "ns=1;s=2.3328.3.0.0.0"}, "HPU Output Line HPU Test MP2 Pressurize Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_MP2.Pressurize_Status", "nodeId": "ns=1;s=2.3327.2.0.0.0"}, "HPU Output Line HPU Test MP2 Block Valve Status": {"tagName": "WOCS_HMI::HPU_Output_Line_HPU_Test_MP2.Block_Status", "nodeId": "ns=1;s=2.3327.3.0.0.0"}, "TH Output Line TH HP1 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_HP1_1.Pressurize_Status", "nodeId": "ns=1;s=2.3281.2.0.0.0"}, "TH Output Line TH HP1 1 Block Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_HP1_1.Block_Status", "nodeId": "ns=1;s=2.3281.3.0.0.0"}, "TH Output Line TH HP1 2 Pressurize Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_HP1_2.Pressurize_Status", "nodeId": "ns=1;s=2.3283.2.0.0.0"}, "TH Output Line TH HP1 2 Block Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_HP1_2.Block_Status", "nodeId": "ns=1;s=2.3283.3.0.0.0"}, "TH Output Line TH MP1 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_MP1_1.Pressurize_Status", "nodeId": "ns=1;s=2.3200.2.0.0.0"}, "TH Output Line TH MP1 1 Block Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_MP1_1.Block_Status", "nodeId": "ns=1;s=2.3200.3.0.0.0"}, "TH Output Line TH MP2 1 Pressurize Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_MP2_1.Pressurize_Status", "nodeId": "ns=1;s=2.3322.2.0.0.0"}, "TH Output Line TH MP2 1 Block Valve Status": {"tagName": "WOCS_HMI::TH_Output_Line_TH_MP2_1.Block_Status", "nodeId": "ns=1;s=2.3322.3.0.0.0"}};
+
+const UNIT_PRESS = "0 = Unknown  1 = Pressurized  2 = Vented  4 = Failed to Pressurize  5 = Failed to Ventilize  6 = Pressurizing  7 = Venting";
+const UNIT_BLOCK = "0 = Unknown  1 = UnBlocked  2 = Blocked";
+
+const VALVE_ROWS = [
+  {desc:"",unit:UNIT_PRESS,func:"CI1",         rto:"HPU_ST_CI1_Pressurize",  type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_CI1_Block",        type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"CI2",         rto:"HPU_ST_CI2_Pressurize",  type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_CI2_Block",        type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"CI3",         rto:"HPU_ST_CI3_Pressurize",  type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_CI3_Block",        type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"CI4",         rto:"HPU_ST_CI4_Pressurize",  type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_CI4_Block",        type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"DHSV1",       rto:"HPU_ST_DHSV1_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_DHSV1_Block",      type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"DHSV2",       rto:"HPU_ST_DHSV2_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_DHSV2_Block",      type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Abre Master", rto:"HPU_ST_MV_Open_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_MV_Open_Block",    type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Fecha Master",rto:"HPU_ST_MV_Close_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_MV_Close_Block",   type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Abre Swab",   rto:"HPU_ST_SV_Open_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_SV_Open_Block",    type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Fecha Swab",  rto:"HPU_ST_SV_Close_Pressurize",type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_SV_Close_Block",   type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Abre Wing",   rto:"HPU_ST_WV_Pressurize",    type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_WV_Block",          type:"block"},
+  {desc:"",unit:UNIT_PRESS,func:"Abre Pacson", rto:"HPU_ST_GL_Pressurize",    type:"press"},
+  {desc:"",unit:UNIT_BLOCK, func:"",            rto:"HPU_ST_GL_Block",          type:"block"},
+];
+
+const ALL_VALVE_DESCS = Object.keys(DATA_VALVE).sort();
+
+function buildValveOptions(sel) {
+  let h = '<option value="">— selecionar —</option>';
+  ALL_VALVE_DESCS.forEach(d => { h += `<option value="${d.replace(/"/g,'&quot;')}" ${d===sel?'selected':''}>${d}</option>`; });
+  return h;
+}
+
+function renderValveTable() {
+  const filled = VALVE_ROWS.filter(r=>r.desc).length;
+  document.getElementById('tab-badge-valves').textContent = VALVE_ROWS.length;
+  document.getElementById('valveRowCount').textContent = VALVE_ROWS.length + ' linhas';
+  document.getElementById('valve-status-msg').textContent =
+    filled === VALVE_ROWS.length
+      ? `✓ Todas as ${VALVE_ROWS.length} linhas preenchidas!`
+      : `${filled} de ${VALVE_ROWS.length} linhas com Description selecionada.`;
+
+  document.getElementById('tbody-valves').innerHTML = VALVE_ROWS.map((r,i) => {
+    const d    = DATA_VALVE[r.desc] || null;
+    const tag  = d ? d.tagName : '';
+    const node = d ? d.nodeId  : '';
+    const isPress = r.type === 'press';
+    const rowCls  = isPress ? 'row-press' : 'row-block';
+    const unitCls = isPress ? 'unit-press' : 'unit-block';
+    const dotCls  = r.desc ? 'filled' : 'empty';
+    return `<tr class="${rowCls}">
+      <td><span class="row-num">${String(i+1).padStart(2,'0')}</span></td>
+      <td style="text-align:center;"><span class="status-dot ${dotCls}"></span></td>
+      <td><span class="tag-cell ${tag?'':'empty'}" id="vtag_${i}" title="${tag}">${tag||'— aguardando —'}</span></td>
+      <td><span class="type-badge type-int">INT</span></td>
+      <td><span class="cell-txt">RO</span></td>
+      <td>
+        <select class="desc-sel ${r.desc?'filled':'empty'}" id="vdesc_${i}" onchange="onValveDesc(${i},this.value)">
+          ${buildValveOptions(r.desc)}
+        </select>
+      </td>
+      <td><span class="${unitCls}">${r.unit}</span></td>
+      <td><span class="cell-func" style="font-weight:${r.func?'600':'400'};color:${r.func?'var(--navy)':'var(--text3)'};">${r.func||'—'}</span></td>
+      <td><span class="cell-rto">${r.rto}</span></td>
+      <td><span class="node-cell ${node?'':'empty'}" id="vnode_${i}">${node||'— aguardando —'}</span></td>
+      <td>
+        <button class="del-btn" onclick="deleteValveRow(${i})" title="Remover linha">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function onValveDesc(i, desc) {
+  VALVE_ROWS[i].desc = desc;
+  const d = DATA_VALVE[desc] || null;
+  document.getElementById(`vtag_${i}`).textContent   = d ? d.tagName : '— aguardando —';
+  document.getElementById(`vnode_${i}`).textContent  = d ? d.nodeId  : '— aguardando —';
+  document.getElementById(`vtag_${i}`).className   = 'tag-cell'  + (d?'':' empty');
+  document.getElementById(`vnode_${i}`).className  = 'node-cell' + (d?'':' empty');
+  document.getElementById(`vdesc_${i}`).className  = 'desc-sel'  + (desc?' filled':' empty');
+  const dot = document.getElementById(`vdesc_${i}`).closest('tr').querySelector('.status-dot');
+  if(dot) dot.className = 'status-dot ' + (desc?'filled':'empty');
+  // update counter
+  const filled = VALVE_ROWS.filter(r=>r.desc).length;
+  document.getElementById('valve-status-msg').textContent =
+    filled === VALVE_ROWS.length
+      ? `✓ Todas as ${VALVE_ROWS.length} linhas preenchidas!`
+      : `${filled} de ${VALVE_ROWS.length} linhas com Description selecionada.`;
+}
+
+function resetValves() {
+  VALVE_ROWS.forEach(r => r.desc = '');
+  renderValveTable();
+  showToast('Seleções de válvulas limpas');
+}
+
+function addValvePair() {
+  VALVE_ROWS.push(
+    {desc:"", unit:UNIT_PRESS, func:"", rto:"", type:"press"},
+    {desc:"", unit:UNIT_BLOCK, func:"", rto:"", type:"block"}
+  );
+  renderValveTable();
+  // scroll last row into view
+  const rows = document.getElementById('tbody-valves').querySelectorAll('tr');
+  if (rows.length) rows[rows.length-1].scrollIntoView({behavior:'smooth', block:'nearest'});
+  showToast('Par Pressurize / Block adicionado');
+}
+
+function deleteValveRow(i) {
+  if (VALVE_ROWS.length <= 2) { showToast('A tabela precisa ter ao menos 1 par'); return; }
+  // If clicked row is Pressurize, delete it + next (Block)
+  // If clicked row is Block, delete it + previous (Pressurize)
+  if (VALVE_ROWS[i].type === 'press') {
+    VALVE_ROWS.splice(i, 2); // remove press + block
+  } else {
+    // block row — remove the press above it first
+    const start = i > 0 ? i - 1 : i;
+    VALVE_ROWS.splice(start, 2);
+  }
+  renderValveTable();
+  showToast('Par Pressurize / Block removido');
+}
+
+// ============================================================
+// TAB SWITCH
+// ============================================================
+function switchTab(tab) {
+  ['tags','valves'].forEach(t => {
+    document.getElementById(`panel-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`tab-btn-${t}`).classList.toggle('active', t===tab);
+  });
+}
+
+// ============================================================
+// DATA & ROWS (preserved exactly from original)
+// ============================================================
+const DATA = {"BackupAirSupply":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_BackupAirSupply.PV","nodeId":"ns=1;s=2.3136.2.0.0.0"},"ExtSignal 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_ExtSignal_1.PV","nodeId":"ns=1;s=2.3338.2.0.0.0"},"ExtSignal 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_ExtSignal_2.PV","nodeId":"ns=1;s=2.3339.2.0.0.0"},"ExtSignal 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_ExtSignal_3.PV","nodeId":"ns=1;s=2.3340.2.0.0.0"},"ExtSignal 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_ExtSignal_4.PV","nodeId":"ns=1;s=2.3341.2.0.0.0"},"HP Supply 1 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_HP_Supply_1_1.PV","nodeId":"ns=1;s=2.3145.2.0.0.0"},"HP Supply 1 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_HP_Supply_1_2.PV","nodeId":"ns=1;s=2.3146.2.0.0.0"},"HP Supply 2 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_HP_Supply_2_1.PV","nodeId":"ns=1;s=2.3147.2.0.0.0"},"HP Supply 2 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_HP_Supply_2_2.PV","nodeId":"ns=1;s=2.3148.2.0.0.0"},"Line HP1 1 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_1_1.PV","nodeId":"ns=1;s=2.3219.2.0.0.0"},"Line HP1 1 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_1_2.PV","nodeId":"ns=1;s=2.3221.2.0.0.0"},"Line HP1 1 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_1_3.PV","nodeId":"ns=1;s=2.3176.2.0.0.0"},"Line HP1 1 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_1_4.PV","nodeId":"ns=1;s=2.3178.2.0.0.0"},"Line HP1 1 5":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_1_5.PV","nodeId":"ns=1;s=2.3180.2.0.0.0"},"Line HP1 2 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_1.PV","nodeId":"ns=1;s=2.3172.2.0.0.0"},"Line HP1 2 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_2.PV","nodeId":"ns=1;s=2.3174.2.0.0.0"},"Line HP1 2 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_3.PV","nodeId":"ns=1;s=2.3335.2.0.0.0"},"Line HP1 2 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_4.PV","nodeId":"ns=1;s=2.3336.2.0.0.0"},"Line HP1 2 5":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_5.PV","nodeId":"ns=1;s=2.3337.2.0.0.0"},"Line HP1 2 6":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_6.PV","nodeId":"ns=1;s=2.3226.2.0.0.0"},"Line HP1 2 7":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_7.PV","nodeId":"ns=1;s=2.3228.2.0.0.0"},"Line HP1 2 8":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_8.PV","nodeId":"ns=1;s=2.3230.2.0.0.0"},"Line HP1 2 9":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP1_2_9.PV","nodeId":"ns=1;s=2.3232.2.0.0.0"},"Line HP2 1 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_1_1.PV","nodeId":"ns=1;s=2.3234.2.0.0.0"},"Line HP2 1 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_1_2.PV","nodeId":"ns=1;s=2.3236.2.0.0.0"},"Line HP2 2 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_1.PV","nodeId":"ns=1;s=2.3237.2.0.0.0"},"Line HP2 2 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_2.PV","nodeId":"ns=1;s=2.3239.2.0.0.0"},"Line HP2 2 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_3.PV","nodeId":"ns=1;s=2.3241.2.0.0.0"},"Line HP2 2 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_4.PV","nodeId":"ns=1;s=2.3243.2.0.0.0"},"Line HP2 2 5":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_5.PV","nodeId":"ns=1;s=2.3247.2.0.0.0"},"Line HP2 2 6":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_HP2_2_6.PV","nodeId":"ns=1;s=2.3245.2.0.0.0"},"Line MP1 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_1.PV","nodeId":"ns=1;s=2.3161.2.0.0.0"},"Line MP1 10":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_10.PV","nodeId":"ns=1;s=2.3302.2.0.0.0"},"Line MP1 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_2.PV","nodeId":"ns=1;s=2.3162.2.0.0.0"},"Line MP1 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_3.PV","nodeId":"ns=1;s=2.3165.2.0.0.0"},"Line MP1 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_4.PV","nodeId":"ns=1;s=2.3166.2.0.0.0"},"Line MP1 5":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_5.PV","nodeId":"ns=1;s=2.3168.2.0.0.0"},"Line MP1 6":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_6.PV","nodeId":"ns=1;s=2.3293.2.0.0.0"},"Line MP1 7":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_7.PV","nodeId":"ns=1;s=2.3295.2.0.0.0"},"Line MP1 8":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_8.PV","nodeId":"ns=1;s=2.3298.2.0.0.0"},"Line MP1 9":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP1_9.PV","nodeId":"ns=1;s=2.3299.2.0.0.0"},"Line MP2 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_1.PV","nodeId":"ns=1;s=2.3263.2.0.0.0"},"Line MP2 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_2.PV","nodeId":"ns=1;s=2.3265.2.0.0.0"},"Line MP2 3":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_3.PV","nodeId":"ns=1;s=2.3267.2.0.0.0"},"Line MP2 4":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_4.PV","nodeId":"ns=1;s=2.3269.2.0.0.0"},"Line MP2 5":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_5.PV","nodeId":"ns=1;s=2.3272.2.0.0.0"},"Line MP2 6":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_6.PV","nodeId":"ns=1;s=2.3275.2.0.0.0"},"Line MP2 7":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_7.PV","nodeId":"ns=1;s=2.3277.2.0.0.0"},"Line MP2 8":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_MP2_8.PV","nodeId":"ns=1;s=2.3279.2.0.0.0"},"Line SDR 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_SDR_1.PV","nodeId":"ns=1;s=2.3333.2.0.0.0"},"Line SDR 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Line_SDR_2.PV","nodeId":"ns=1;s=2.3334.2.0.0.0"},"MP Supply 1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_MP_Supply_1.PV","nodeId":"ns=1;s=2.3142.2.0.0.0"},"MP Supply 2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_MP_Supply_2.PV","nodeId":"ns=1;s=2.3143.2.0.0.0"},"MP Supply SDR Pilot":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_MP_Supply_SDR_Pilot.PV","nodeId":"ns=1;s=2.3140.2.0.0.0"},"MP Supply SDR Prech":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_MP_Supply_SDR_Prech.PV","nodeId":"ns=1;s=2.3141.2.0.0.0"},"RigAirSupply":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_RigAirSupply.PV","nodeId":"ns=1;s=2.3135.2.0.0.0"},"Test HP1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Test_HP1.PV","nodeId":"ns=1;s=2.3331.2.0.0.0"},"Test HP2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Test_HP2.PV","nodeId":"ns=1;s=2.3332.2.0.0.0"},"Test MP1":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Test_MP1.PV","nodeId":"ns=1;s=2.3329.2.0.0.0"},"Test MP2":{"tagName":"WOCS_HMI::HPU_AI_HPU_PT_Test_MP2.PV","nodeId":"ns=1;s=2.3330.2.0.0.0"},"Rs AI RS FT CI Line 1":{"tagName":"WOCS_HMI::Rs_AI_RS_FT_CI_Line_1.Volume_Acc","nodeId":"ns=1;s=2.3194.6.0.0.0"},"Rs AI RS FT CI Line 2":{"tagName":"WOCS_HMI::Rs_AI_RS_FT_CI_Line_2.Volume_Acc","nodeId":"ns=1;s=2.3190.6.0.0.0"},"Rs AI RS FT CI Line 3":{"tagName":"WOCS_HMI::Rs_AI_RS_FT_CI_Line_3.Volume_Acc","nodeId":"ns=1;s=2.3186.6.0.0.0"},"HPU AI HPU FT HP Supply":{"tagName":"WOCS_HMI::HPU_AI_HPU_FT_HP_Supply.Volume_Acc","nodeId":"ns=1;s=2.3149.6.0.0.0"},"HPU AI HPU FT MP Supply":{"tagName":"WOCS_HMI::HPU_AI_HPU_FT_MP_Supply.Volume_Acc","nodeId":"ns=1;s=2.3144.6.0.0.0"},"HPU AI HPU FT Return":{"tagName":"WOCS_HMI::HPU_AI_HPU_FT_Return.Volume_Acc","nodeId":"ns=1;s=2.3137.6.0.0.0"},"HPU AI OWS HP CtrlPT":{"tagName":"WOCS_HMI::HPU_AI_OWS_HP_CtrlPT.PV","nodeId":"ns=1;s=2.3109.2.0.0.0"},"HPU AI OWS MP CtrlPT":{"tagName":"WOCS_HMI::HPU_AI_OWS_MP_CtrlPT.PV","nodeId":"ns=1;s=2.3108.2.0.0.0"},"HPU AI TH HP CtrlPT":{"tagName":"WOCS_HMI::HPU_AI_TH_HP_CtrlPT.PV","nodeId":"ns=1;s=2.3111.2.0.0.0"},"HPU AI TH MP CtrlPT":{"tagName":"WOCS_HMI::HPU_AI_TH_MP_CtrlPT.PV","nodeId":"ns=1;s=2.3110.2.0.0.0"},"TH AI TH PT HP Header":{"tagName":"WOCS_HMI::TH_AI_TH_PT_HP_Header.PV","nodeId":"ns=1;s=2.3155.2.0.0.0"},"TH AI TH PT MP Header":{"tagName":"WOCS_HMI::TH_AI_TH_PT_MP_Header.PV","nodeId":"ns=1;s=2.3159.2.0.0.0"}};
+
+const ROWS = [
+  {dt:"Float",ca:"RO",desc:"MP Supply 1",unit:"Psi",range:"0 - 5.000 psi",func:"Header de MP",rto:"HPU_PT_MP_Supply_1"},
+  {dt:"Float",ca:"RO",desc:"MP Supply 2",unit:"Psi",range:"0 - 5.000 psi",func:"Header de MP",rto:"HPU_PT_MP_Supply_2"},
+  {dt:"Float",ca:"RO",desc:"RigAirSupply",unit:"Psi",range:"0 - 200 psi",func:"Suprimento de AR da Sonda",rto:"HPU_PT_Air_Supply"},
+  {dt:"Float",ca:"RO",desc:"BackupAirSupply",unit:"Psi",range:"0 - 200 psi",func:"Pressão de AR da HPU",rto:"HPU_PT_Air_Supply_Bkp"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"CI 1  LCI - Fechamento da ICV zona inferior",rto:"HPU_PT_CI1"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"CI 2  LCI - Fechamento da ICV zona intermediária",rto:"HPU_PT_CI2"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"CI 3  LCI - Fechamento da ICV zona superior",rto:"HPU_PT_CI3"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"CI 4 LCI – Abertura comum das ICVs",rto:"HPU_PT_CI4"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"DHSV 1",rto:"HPU_PT_DHSV1"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"DHSV 2",rto:"HPU_PT_DHSV2"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"IQ3",rto:"HPU_PT_IQ3"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"IQ4",rto:"HPU_PT_IQ4"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 10.000 psi",func:"IQ5",rto:"HPU_PT_IQ5"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"THRT - LOWER RING LOCK  (TRAVA ANEL INFERIOR)",rto:"HPU_PT_THRT_LR_Lock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"THRT - LOWER RING UNLOCK (DESTRAVA ANEL INFERIOR)",rto:"HPU_PT_THRT_LR_Unlock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"THRT - UPPER RING LOCK (TRAVA ANEL SUPERIOR)",rto:"HPU_PT_THRT_UR_Lock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"THRT - UPPER RING UNLOCK (DESTRAVA ANEL SUPERIOR)",rto:"HPU_PT_THRT_UR_Unlock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"TUBING HANGER LOCK (TRAVA TH)",rto:"HPU_PT_THRT_Lock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"TUBING HANGER UNLOCK (DESTRAVA TH)",rto:"HPU_PT_THRT_Unlock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"DESCONEXÃO DE EMERGÊNCIA DA THRT",rto:"HPU_PT_Emergency_Unlock"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"ABRE Master",rto:"HPU_PT_MV_Open"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"FECHA Master",rto:"HPU_PT_MV_Close"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"ABRE Swab",rto:"HPU_PT_SV_Open"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"FECHA Swab",rto:"HPU_PT_SV_Close"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"ABRE Wing",rto:"HPU_PT_WV_Open"},
+  {dt:"Float",ca:"RO",desc:"",unit:"Psi",range:"0 - 5.000 psi",func:"Packson Valve",rto:"HPU_PT_PACSON_OPEN"},
+  {dt:"Float",ca:"RO",desc:"Rs AI RS FT CI Line 1",unit:"l",range:"auto - auto",func:"Flowmeter Bomba IQA Volume",rto:"HPU_FT_IQA_ACC"},
+  {dt:"Float",ca:"RO",desc:"Rs AI RS FT CI Line 2",unit:"l",range:"auto - auto",func:"Flowmeter Bomba IQB Volume",rto:"HPU_FT_IQB_ACC"},
+  {dt:"Float",ca:"RO",desc:"Rs AI RS FT CI Line 3",unit:"l",range:"auto - auto",func:"Flowmeter Bomba IQC Volume",rto:"HPU_FT_IQC_ACC"},
+  {dt:"Float",ca:"RO",desc:"HPU AI HPU FT HP Supply",unit:"l",range:"auto - auto",func:"Flowmeter Bomba HP Volume",rto:"HPU_FT_HP_ACC"},
+  {dt:"Float",ca:"RO",desc:"HPU AI HPU FT MP Supply",unit:"l",range:"auto - auto",func:"Flowmeter Bomba MP Volume",rto:"HPU_FT_MP_ACC"},
+  {dt:"Float",ca:"RO",desc:"HPU AI HPU FT Return",unit:"l",range:"auto - auto",func:"Flowmeter Retorno Volume",rto:"HPU_FT_RET_ACC"},
+];
+
+const ALL_DESCS = Object.keys(DATA).sort();
+
+// ============================================================
+// RENDER
+// ============================================================
+function typeBadge(dt) {
+  const cls = dt === 'Float' ? 'type-float' : dt === 'INT' ? 'type-int' : 'type-bool';
+  return `<span class="type-badge ${cls}">${dt}</span>`;
+}
+
+function buildOptions(sel) {
+  let h = '<option value="">— selecionar —</option>';
+  ALL_DESCS.forEach(d => { h += `<option value="${d.replace(/"/g,'&quot;')}" ${d===sel?'selected':''}>${d}</option>`; });
+  return h;
+}
+
+function renderTable() {
+  const n = ROWS.length;
+  const filled = ROWS.filter(r => r.desc).length;
+  const pct = n ? Math.round(filled/n*100) : 0;
+
+  document.getElementById('rowCount').textContent   = n + ' linhas';
+  document.getElementById('stat-total').textContent = n;
+  document.getElementById('stat-filled').textContent= filled;
+  document.getElementById('stat-pending').textContent= n - filled;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('status-msg').textContent =
+    filled === n && n > 0
+      ? `✓ Todas as ${n} linhas preenchidas — pronto para exportar!`
+      : `${filled} de ${n} linhas com Description selecionada.`;
+
+  document.getElementById('tbody').innerHTML = ROWS.map((r, i) => {
+    const d   = DATA[r.desc] || null;
+    const tag  = d ? d.tagName : '';
+    const node = d ? d.nodeId  : '';
+    const isFilled = !!r.desc;
+    const rowCls = isFilled ? 'row-filled' : 'row-empty';
+    const dotCls = isFilled ? 'filled' : 'empty';
+    return `<tr class="${rowCls}">
+      <td><span class="row-num">${String(i+1).padStart(2,'0')}</span></td>
+      <td style="text-align:center;"><span class="status-dot ${dotCls}"></span></td>
+      <td><span class="tag-cell ${tag?'':'empty'}" id="tag_${i}" title="${tag}">${tag || '— aguardando —'}</span></td>
+      <td>${typeBadge(r.dt)}</td>
+      <td><span class="cell-txt">${r.ca}</span></td>
+      <td>
+        <select class="desc-sel ${isFilled?'filled':'empty'}" id="desc_${i}" onchange="onDesc(${i},this.value)">
+          ${buildOptions(r.desc)}
+        </select>
+      </td>
+      <td><span class="cell-txt">${r.unit}</span></td>
+      <td><span class="cell-txt" style="font-size:11px;">${r.range}</span></td>
+      <td><span class="cell-func">${r.func}</span></td>
+      <td><span class="cell-rto">${r.rto}</span></td>
+      <td><span class="node-cell ${node?'':'empty'}" id="node_${i}">${node || '— aguardando —'}</span></td>
+      <td>
+        <button class="del-btn" onclick="deleteRow(${i})" title="Remover linha">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function onDesc(i, desc) {
+  ROWS[i].desc = desc;
+  const d    = DATA[desc] || null;
+  const tag  = document.getElementById(`tag_${i}`);
+  const node = document.getElementById(`node_${i}`);
+  const sel  = document.getElementById(`desc_${i}`);
+  const row  = sel.closest('tr');
+
+  tag.textContent  = d ? d.tagName : '— aguardando —';
+  node.textContent = d ? d.nodeId  : '— aguardando —';
+  tag.className    = 'tag-cell'  + (d ? '' : ' empty');
+  node.className   = 'node-cell' + (d ? '' : ' empty');
+  sel.className    = 'desc-sel'  + (desc ? ' filled' : ' empty');
+
+  // Update row class & dot
+  row.className = desc ? 'row-filled' : 'row-empty';
+  const dot = row.querySelectorAll('.status-dot')[0];
+  if (dot) { dot.className = 'status-dot ' + (desc ? 'filled' : 'empty'); }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const n = ROWS.length;
+  const filled = ROWS.filter(r => r.desc).length;
+  const pct = n ? Math.round(filled/n*100) : 0;
+  document.getElementById('stat-filled').textContent  = filled;
+  document.getElementById('stat-pending').textContent = n - filled;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('status-msg').textContent =
+    filled === n && n > 0
+      ? `✓ Todas as ${n} linhas preenchidas — pronto para exportar!`
+      : `${filled} de ${n} linhas com Description selecionada.`;
+}
+
+function addRow() {
+  ROWS.push({dt:"Float", ca:"RO", desc:"", unit:"Psi", range:"", func:"", rto:""});
+  renderTable();
+  const rows = document.getElementById('tbody').querySelectorAll('tr');
+  const last = rows[rows.length - 1];
+  if (last) {
+    last.classList.add('row-new');
+    last.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+  document.getElementById('stat-total').textContent = ROWS.length;
+  document.getElementById('rowCount').textContent = ROWS.length + ' linhas';
+}
+
+function deleteRow(i) {
+  if (ROWS.length === 1) { showToast('A tabela precisa ter ao menos 1 linha'); return; }
+  ROWS.splice(i, 1);
+  renderTable();
+}
+
+function resetAll() {
+  const fixed = new Set(['MP Supply 1','MP Supply 2','RigAirSupply','BackupAirSupply',
+    'Rs AI RS FT CI Line 1','Rs AI RS FT CI Line 2','Rs AI RS FT CI Line 3',
+    'HPU AI HPU FT HP Supply','HPU AI HPU FT MP Supply','HPU AI HPU FT Return']);
+  ROWS.forEach(r => { if(!fixed.has(r.desc)) r.desc=''; });
+  renderTable();
+  showToast('Seleções limpas');
+}
+
+// ============================================================
+// OPERATION TYPE & IWOCS STYLE
+// ============================================================
+function updateOpStyle(sel, type) {
+  sel.className = '';
+  if (type === 'op')    sel.className = sel.value === 'ITH' ? 'sel-ith' : 'sel-lwo';
+  else                  sel.className = sel.value === 'OSM' ? 'sel-osm' : 'sel-irm';
+}
+
+// ============================================================
+// EXPORT EXCEL — ExcelJS com logo, cores e formatação profissional
+// ============================================================
+const LOGO_PNG_B64 = "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";
+
+// ============================================================
+// EXPORT EXCEL — formato idêntico ao preview
+// ============================================================
+async function exportExcel() {
+  const sonda    = document.getElementById('inp_sonda').value.trim()    || 'NS-XX';
+  const poco     = document.getElementById('inp_poco').value.trim()     || 'CAMPO-POCO';
+  const operacao = document.getElementById('inp_operacao').value;
+  const iwocs    = document.getElementById('inp_iwocs').value;
+  const title    = `${sonda} — ${poco}`;
+  const docNum   = 'HP7938-IDX-0001  Rev.02';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SLB OneSubsea';
+  wb.created = new Date();
+
+  // ── Cores exatas do preview ────────────────────────────────
+  const C = {
+    navy:     '003087',
+    navyDark: '001F6B',
+    orange:   'FF6B00',
+    hdrBg:    'C0C8D8',
+    hdrText:  '12213A',
+    white:    'FFFFFF',
+    // Tags preenchidas — alternado
+    green1:   'C6E0B4',
+    green2:   'B8D9A4',
+    // Tags pendentes — alternado
+    empty1:   'FFFFFF',
+    empty2:   'EEF3FB',
+    // Pending text
+    pendText: '7A8EA8',
+    // Tag Name / OPC Tag mono
+    tagColor: '003087',
+    nodeColor:'0F6B3A',
+    // Float badge
+    floatBg:  'EEF3FB',
+    floatFg:  '1E40AF',
+    // INT badge
+    intBg:    'FEF3C7',
+    intFg:    '92400E',
+    // Op type
+    ithBg: 'DBEAFE', ithFg: '1D4ED8', ithBdr: '1D4ED8',
+    lwoBg: 'EDE9FE', lwoFg: '6D28D9', lwoBdr: '6D28D9',
+    // IWOCS
+    osmBg: 'CFFAFE', osmFg: '0E7490', osmBdr: '0E7490',
+    irmBg: 'FEF3C7', irmFg: 'B45309', irmBdr: 'B45309',
+    // Footer
+    footText: '99BBEE',
+    // Válvulas
+    pressBg: 'FFF8E1', pressFg: '92400E',
+    blockBg: 'E0F7FA', blockFg: '0E7490',
+    sepBdr:  'CDD5E4',
+  };
+
+  const opBg  = operacao==='ITH' ? C.ithBg  : C.lwoBg;
+  const opFg  = operacao==='ITH' ? C.ithFg  : C.lwoFg;
+  const opBdr = operacao==='ITH' ? C.ithBdr : C.lwoBdr;
+  const iwBg  = iwocs==='OSM'    ? C.osmBg  : C.irmBg;
+  const iwFg  = iwocs==='OSM'    ? C.osmFg  : C.irmFg;
+  const iwBdr = iwocs==='OSM'    ? C.osmBdr : C.irmBdr;
+
+  // ── Helpers ───────────────────────────────────────────────
+  const fill  = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+  const fnt   = (argb, sz=10, bold=false, italic=false, name='Calibri') =>
+    ({name, size:sz, bold, italic, color:{argb}});
+  const aln   = (h='center', v='middle', wrap=false) =>
+    ({horizontal:h, vertical:v, wrapText:wrap});
+  const thinBdr = argb => ({style:'thin', color:{argb}});
+  const bdr   = (argb='AABBCC') => {
+    const s = thinBdr(argb);
+    return {top:s, left:s, bottom:s, right:s};
+  };
+  const medBdr = argb => ({style:'medium', color:{argb}});
+
+  // autofit largura baseada no conteúdo
+  function autoFit(ws, data2d, min=8, max=60) {
+    const n = data2d.reduce((m,r)=>Math.max(m,r.length),0);
+    const w = Array(n).fill(min);
+    data2d.forEach(r=>r.forEach((v,i)=>{ w[i]=Math.min(max,Math.max(w[i],String(v||'').length+2)); }));
+    ws.columns = w.map(width=>({width}));
+  }
+
+  // ── Logo ──────────────────────────────────────────────────
+  const logoId = wb.addImage({base64:LOGO_PNG_B64, extension:'png'});
+
+  // ═══════════════════════════════════════════════════════════
+  // BUILDER: cria header padrão nas 3 primeiras linhas
+  // ═══════════════════════════════════════════════════════════
+  function buildHeader(ws, nCols) {
+    ws.getRow(1).height = 44;
+    ws.getRow(2).height = 24;
+    ws.getRow(3).height = 18;
+
+    // Row 1 — toda em navy
+    for(let c=1;c<=nCols;c++) {
+      const cell = ws.getCell(1,c);
+      cell.fill = fill(C.navy);
+    }
+    // Logo A1:C1
+    ws.mergeCells(1,1,1,3);
+    ws.getCell('A1').value     = 'SLB OneSubsea';
+    ws.getCell('A1').font      = fnt(C.white, 16, true);
+    ws.getCell('A1').alignment = aln('center','middle');
+    ws.getCell('A1').border    = {left:{style:'thick',color:{argb:C.orange}},
+                                   top:thinBdr(C.navy), bottom:thinBdr(C.navy), right:thinBdr(C.navyDark)};
+    // Title D1:H1
+    ws.mergeCells(1,4,1,nCols-1);
+    ws.getCell(1,4).value     = title;
+    ws.getCell(1,4).font      = fnt(C.white, 13, true);
+    ws.getCell(1,4).alignment = aln('center','middle');
+    // DocNum I1
+    ws.getCell(1,nCols).value     = docNum;
+    ws.getCell(1,nCols).fill      = fill(C.navyDark);
+    ws.getCell(1,nCols).font      = fnt(C.footText, 9, false, true);
+    ws.getCell(1,nCols).alignment = aln('right','middle');
+
+    // Row 2 — Op | IWOCS  (metade esquerda / metade direita)
+    const half = Math.floor(nCols/2);
+    ws.mergeCells(2,1,2,half);
+    ws.getCell(2,1).value     = `Tipo de Operação: ${operacao}`;
+    ws.getCell(2,1).fill      = fill(opBg);
+    ws.getCell(2,1).font      = fnt(opFg, 11, true);
+    ws.getCell(2,1).alignment = aln('left','middle');
+    ws.getCell(2,1).border    = {left:{style:'medium',color:{argb:opBdr}},
+                                   top:thinBdr(opBg),bottom:thinBdr(opBg),right:thinBdr(opBg)};
+    for(let c=2;c<=half;c++) ws.getCell(2,c).fill = fill(opBg);
+
+    ws.mergeCells(2,half+1,2,nCols);
+    ws.getCell(2,half+1).value     = `IWOCS: ${iwocs}`;
+    ws.getCell(2,half+1).fill      = fill(iwBg);
+    ws.getCell(2,half+1).font      = fnt(iwFg, 11, true);
+    ws.getCell(2,half+1).alignment = aln('left','middle');
+    ws.getCell(2,half+1).border    = {left:{style:'medium',color:{argb:iwBdr}},
+                                        top:thinBdr(iwBg),bottom:thinBdr(iwBg),right:thinBdr(iwBg)};
+    for(let c=half+2;c<=nCols;c++) ws.getCell(2,c).fill = fill(iwBg);
+  }
+
+  function buildColHeaders(ws, labels) {
+    labels.forEach((lbl,ci) => {
+      const cell = ws.getCell(3, ci+1);
+      cell.value     = lbl;
+      cell.fill      = fill(C.hdrBg);
+      cell.font      = fnt(C.hdrText, 10, true);
+      cell.alignment = aln('center','middle');
+      cell.border    = {
+        top:   thinBdr('B0B8C8'),
+        left:  thinBdr('B0B8C8'),
+        right: thinBdr('B0B8C8'),
+        bottom:{style:'medium', color:{argb:C.navy}}
+      };
+    });
+  }
+
+  function buildFooter(ws, nCols, rowNum, nTags) {
+    ws.mergeCells(rowNum, 1, rowNum, nCols);
+    const cell = ws.getCell(rowNum, 1);
+    cell.value     = `SLB OneSubsea  |  ${title}  |  ${operacao} / ${iwocs}  |  ${nTags} tags`;
+    cell.fill      = fill(C.navy);
+    cell.font      = fnt(C.footText, 9, false, true);
+    cell.alignment = aln('center','middle');
+    ws.getRow(rowNum).height = 14;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SHEET 1 — Relação Tags HPU OSS
+  // ═══════════════════════════════════════════════════════════
+  const ws1 = wb.addWorksheet('Relação Tags HPU OSS', {
+    views:[{state:'frozen', ySplit:3}],
+    pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1}
+  });
+
+  const hdrs1 = ['Tag Name','Data Type','Client Access','Description',
+                 'Signal State/Unit','Range','Função','RTO Tag','OPC Tag'];
+
+  // Calc all data for autofit
+  const data1 = [hdrs1, ...ROWS.map(r=>{
+    const d=DATA[r.desc]||null;
+    return [d?d.tagName:'',r.dt,r.ca,r.desc,r.unit,r.range,r.func,r.rto,d?d.nodeId:''];
+  })];
+  autoFit(ws1, data1, 8, 65);
+  // Ensure minimums
+  const c1 = ws1.columns;
+  if(c1[0]) c1[0].width = Math.max(c1[0].width,38);
+  if(c1[6]) c1[6].width = Math.max(c1[6].width,28);
+  if(c1[8]) c1[8].width = Math.max(c1[8].width,22);
+
+  buildHeader(ws1, 9);
+  buildColHeaders(ws1, hdrs1);
+  ws1.addImage(logoId, {tl:{col:0,row:0}, br:{col:3,row:1}, editAs:'oneCell'});
+
+  ROWS.forEach((r, ri) => {
+    const d      = DATA[r.desc] || null;
+    const rowNum = ri + 4;
+    const even   = ri % 2 === 0;
+    const rowBg  = d ? (even ? C.green1 : C.green2) : (even ? C.empty1 : C.empty2);
+    const vals   = [
+      d ? d.tagName : '', r.dt, r.ca, r.desc,
+      r.unit, r.range, r.func, r.rto, d ? d.nodeId : ''
+    ];
+    ws1.getRow(rowNum).height = 15;
+
+    vals.forEach((v, ci) => {
+      const cell = ws1.getCell(rowNum, ci+1);
+      cell.border    = bdr('DCE6F0');
+      cell.value     = v || '';
+
+      if (ci === 0) {
+        // Tag Name — mono navy left
+        cell.fill      = fill(rowBg);
+        cell.font      = fnt(d ? C.tagColor : C.pendText, 8, false, !d);
+        cell.alignment = aln('left','middle');
+      } else if (ci === 1) {
+        // Data Type badge
+        const tf = r.dt==='Float' ? {bg:C.floatBg,fg:C.floatFg} : {bg:C.intBg,fg:C.intFg};
+        cell.fill      = fill(tf.bg);
+        cell.font      = fnt(tf.fg, 9, true);
+        cell.alignment = aln('center','middle');
+      } else if (ci === 3) {
+        // Description — left, italic if empty
+        cell.fill      = fill(rowBg);
+        cell.font      = fnt(d ? C.hdrText : C.pendText, 9, false, !d);
+        cell.alignment = aln('left','middle');
+      } else if (ci === 6) {
+        // Função — left
+        cell.fill      = fill(rowBg);
+        cell.font      = fnt(C.hdrText, 9);
+        cell.alignment = aln('left','middle', true);
+      } else if (ci === 8) {
+        // OPC Tag — mono green
+        cell.fill      = fill(rowBg);
+        cell.font      = fnt(d ? C.nodeColor : C.pendText, 8, false, !d);
+        cell.alignment = aln('center','middle');
+      } else {
+        cell.fill      = fill(rowBg);
+        cell.font      = fnt(d || ci>3 ? C.hdrText : C.pendText, 9);
+        cell.alignment = aln('center','middle', true);
+      }
+    });
+  });
+
+  buildFooter(ws1, 9, ROWS.length+4, ROWS.length);
+
+  // ═══════════════════════════════════════════════════════════
+  // SHEET 2 — Status de Válvulas
+  // ═══════════════════════════════════════════════════════════
+  const ws2 = wb.addWorksheet('Status de Válvulas', {
+    views:[{state:'frozen', ySplit:3}],
+    pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1}
+  });
+
+  const hdrs2 = ['Tag Name','Data Type','Client Access','Description',
+                 'Signal State / Unit','Função','RTO Tag','OPC Tag'];
+
+  const data2 = [hdrs2, ...VALVE_ROWS.map(r=>{
+    const d=DATA_VALVE[r.desc]||null;
+    return [d?d.tagName:'','INT','RO',r.desc,r.unit,r.func,r.rto,d?d.nodeId:''];
+  })];
+  autoFit(ws2, data2, 8, 70);
+  const c2 = ws2.columns;
+  if(c2[0]) c2[0].width = Math.max(c2[0].width,38);
+  if(c2[4]) c2[4].width = Math.max(c2[4].width,55);
+  if(c2[7]) c2[7].width = Math.max(c2[7].width,22);
+
+  buildHeader(ws2, 8);
+  buildColHeaders(ws2, hdrs2);
+  ws2.addImage(logoId, {tl:{col:0,row:0}, br:{col:3,row:1}, editAs:'oneCell'});
+
+  VALVE_ROWS.forEach((r, ri) => {
+    const d      = DATA_VALVE[r.desc] || null;
+    const rowNum = ri + 4;
+    const isP    = r.type === 'press';
+    const bg     = isP ? C.pressBg : C.blockBg;
+    const fg     = isP ? C.pressFg : C.blockFg;
+    const vals   = [
+      d ? d.tagName:'', 'INT', 'RO', r.desc,
+      r.unit, r.func, r.rto, d ? d.nodeId:''
+    ];
+    // altura da linha proporcional ao Signal State/Unit (mais longo)
+    ws2.getRow(rowNum).height = isP ? 26 : 16;
+
+    vals.forEach((v, ci) => {
+      const cell = ws2.getCell(rowNum, ci+1);
+      cell.fill   = fill(bg);
+      cell.border = bdr(isP ? 'E8D8B0' : 'B5E0E8');
+
+      if (ci === 0) {
+        // Tag Name mono navy
+        cell.font      = fnt(C.tagColor, 8);
+        cell.alignment = aln('left','middle');
+      } else if (ci === 1) {
+        // INT badge
+        cell.fill      = fill(C.intBg);
+        cell.font      = fnt(C.intFg, 9, true);
+        cell.alignment = aln('center','middle');
+      } else if (ci === 4) {
+        // Signal State/Unit — left, small, wrap
+        cell.font      = fnt(fg, 8);
+        cell.alignment = aln('left','middle', true);
+      } else if (ci === 5) {
+        // Função — bold for press
+        cell.font      = fnt(fg, 10, isP && !!r.func);
+        cell.alignment = aln('center','middle');
+      } else if (ci === 7) {
+        // OPC Tag mono green
+        cell.font      = fnt(d ? C.nodeColor : C.pendText, 8);
+        cell.alignment = aln('center','middle');
+      } else {
+        cell.font      = fnt(fg, 9);
+        cell.alignment = aln('center','middle');
+      }
+      cell.value = v || '';
+    });
+
+    // Separador entre block e próximo press — borda inferior grossa
+    if (!isP && ri+1<VALVE_ROWS.length && VALVE_ROWS[ri+1].type==='press') {
+      for(let c=1;c<=8;c++) {
+        const cell = ws2.getCell(rowNum, c);
+        cell.border = {...cell.border, bottom:{style:'medium', color:{argb:C.sepBdr}}};
+      }
+    }
+  });
+
+  buildFooter(ws2, 8, VALVE_ROWS.length+4, VALVE_ROWS.length);
+
+  // ── Gerar e baixar ─────────────────────────────────────────
+  const safe  = s => s.replace(/\s+/g,'_').replace(/[^\w\-]/g,'');
+  const fname = `Tabela_OPC_${safe(sonda)}_${safe(poco)}_${operacao}_${iwocs}.xlsx`;
+  const buf   = await wb.xlsx.writeBuffer();
+  const blob  = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = fname;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`Excel exportado — 2 abas ✓`);
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg) {
+  const el  = document.getElementById('toast');
+  const msg_ = document.getElementById('toast-msg');
+  msg_.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderTable();
+renderValveTable();
+document.addEventListener('DOMContentLoaded', () => {
+  updateOpStyle(document.getElementById('inp_operacao'), 'op');
+  updateOpStyle(document.getElementById('inp_iwocs'), 'iwocs');
+});
+// Apply immediately too (in case DOMContentLoaded already fired)
+setTimeout(() => {
+  const op = document.getElementById('inp_operacao');
+  const iw = document.getElementById('inp_iwocs');
+  if(op) updateOpStyle(op,'op');
+  if(iw) updateOpStyle(iw,'iwocs');
+}, 0);
+</script>
+</body>
+</html>
